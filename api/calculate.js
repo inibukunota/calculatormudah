@@ -1,12 +1,18 @@
 export default function handler(req, res) {
-  const { input } = req.body;
+  const { expression } = req.body;
 
-  // Example logic: sum all digits
-  const sum = input
-    .split('')
-    .reduce((acc, num) => acc + Number(num), 0);
+  try {
+    // Allow only numbers and math operators
+    if (!/^[0-9+\-*/.]+$/.test(expression)) {
+      return res.status(400).json({ result: "Invalid input" });
+    }
 
-  return res.status(200).json({
-    result: sum
-  });
+    // Evaluate safely (basic controlled environment)
+    const result = Function(`"use strict"; return (${expression})`)();
+
+    return res.status(200).json({ result });
+
+  } catch (err) {
+    return res.status(400).json({ result: "Error" });
+  }
 }
