@@ -5,14 +5,16 @@ import { useState } from "react";
 export default function Home() {
   const [input, setInput] = useState("");
   const [result, setResult] = useState("");
-  const [history, setHistory] = useState([]);
 
   const buttons = [
-    "7","8","9","/",
-    "4","5","6","*",
-    "1","2","3","-",
-    "0","C","=","+"
+    ["C", "±", "%", "/"],
+    ["7", "8", "9", "*"],
+    ["4", "5", "6", "-"],
+    ["1", "2", "3", "+"],
+    ["0", ".", "="],
   ];
+
+  const isOperator = (val) => ["/", "*", "-", "+", "="].includes(val);
 
   const press = (val) => {
     if (val === "C") {
@@ -26,12 +28,24 @@ export default function Home() {
       return;
     }
 
+    if (val === "±") {
+      if (input) {
+        setInput((prev) => String(-Number(prev)));
+      }
+      return;
+    }
+
+    if (val === "%") {
+      if (input) {
+        setInput((prev) => String(Number(prev) / 100));
+      }
+      return;
+    }
+
     setInput((prev) => prev + val);
   };
 
   const calculate = async () => {
-    if (!input) return;
-
     const res = await fetch("/api/calculate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -39,55 +53,51 @@ export default function Home() {
     });
 
     const data = await res.json();
-
     setResult(data.result);
-
-    setHistory((prev) => [
-      `${input} = ${data.result}`,
-      ...prev.slice(0, 4),
-    ]);
-
     setInput("");
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+    <div className="flex items-center justify-center min-h-screen bg-black">
+      <div className="w-[320px] rounded-3xl p-4">
 
-      {/* Display */}
-      <div className="w-72 bg-white rounded-2xl shadow p-4 mb-4">
-        <div className="text-right text-gray-500 h-6">{input}</div>
-        <div className="text-right text-2xl font-bold">{result}</div>
-      </div>
+        {/* Display */}
+        <div className="text-right text-white mb-6">
+          <div className="text-gray-400 text-lg h-6">{input}</div>
+          <div className="text-5xl font-light">{result}</div>
+        </div>
 
-      {/* Buttons */}
-      <div className="grid grid-cols-4 gap-2 w-72">
-        {buttons.map((b) => (
-          <button
-            key={b}
-            onClick={() => press(b)}
-            className="bg-white shadow rounded-xl p-4 text-lg active:scale-95"
-          >
-            {b}
-          </button>
-        ))}
-      </div>
-
-      {/* History */}
-      <div className="w-72 mt-6">
-        <h3 className="text-sm text-gray-600 mb-2">History</h3>
-        <div className="bg-white rounded-xl shadow p-3 text-sm space-y-1">
-          {history.length === 0 && (
-            <p className="text-gray-400">No calculations yet</p>
-          )}
-
-          {history.map((h, i) => (
-            <div key={i} className="text-gray-700">
-              {h}
+        {/* Buttons */}
+        <div className="grid gap-3">
+          {buttons.map((row, i) => (
+            <div key={i} className="grid grid-cols-4 gap-3">
+              {row.map((btn) => (
+                <button
+                  key={btn}
+                  onClick={() => press(btn)}
+                  className={`
+                    h-16 rounded-full text-xl font-medium active:scale-95 transition
+                    ${
+                      btn === "0"
+                        ? "col-span-2 text-left pl-6"
+                        : ""
+                    }
+                    ${
+                      isOperator(btn)
+                        ? "bg-orange-500 text-white"
+                        : "bg-[#333] text-white"
+                    }
+                    ${btn === "=" ? "bg-orange-500" : ""}
+                  `}
+                >
+                  {btn}
+                </button>
+              ))}
             </div>
           ))}
         </div>
-      </div>
 
+      </div>
     </div>
   );
 }
